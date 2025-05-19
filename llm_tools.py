@@ -1,7 +1,7 @@
 import ollama
 import json
 from dotenv import load_dotenv
-from config import use_local_llm, ollama_llm
+from config import use_local_llm, ollama_llm, openai_llm
 from typing import Any
 from openai import OpenAI
 
@@ -27,7 +27,7 @@ def call_ollama(prompt: str, output_format: Any, llm: str = ollama_llm) -> str:
     )
     return output_format.model_validate_json(response.message.content)
 
-def call_openai(prompt: str, output_format: Any, llm: str = "gpt-4o") -> str:
+def call_openai(prompt: str, output_format: Any, llm: str = openai_llm) -> str:
     """Call the OpenAI API with a prompt."""
 
     response = client.responses.parse(
