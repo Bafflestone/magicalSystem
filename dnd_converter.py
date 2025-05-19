@@ -1,7 +1,7 @@
 import json
 from pydantic import BaseModel
 from typing import Literal, Optional, List
-from llm_tools import call_ollama, extract_json
+from llm_tools import call_llm
 
 TYPE_PROMPT_TEMPLATE = """
 You are a dungeons and dragons dungeon master. Given a description of an entity or magical force in a fasntasy universe, please determine its type.
@@ -73,13 +73,12 @@ DND_MAP = {
 def systematise_magic(description, system="D&D 5e"):
 
     prompt = TYPE_PROMPT_TEMPLATE.format(description=description, system=system)
-    print("Sending to Ollama...")
+    print("Sending to LLM...")
 
     try:
-        response = call_ollama(prompt, DnDType)
-        type_dict = extract_json(response)
-        print(type_dict)
-        entity_type = type_dict['type']
+        response = call_llm(prompt, DnDType)
+        entity_type = response.type
+        print(f"Entity type: {entity_type}")
     except Exception as e:
         print(f"Error: {e}")
 
@@ -87,11 +86,11 @@ def systematise_magic(description, system="D&D 5e"):
     prompt = OBJECT_TEMPLATE.format(description=description, system=system)
     entity_model = DND_MAP[entity_type]
 
-    print("Sending to Ollama...")
+    print("Sending to LLM...")
 
     try:
-        response = call_ollama(prompt, entity_model)
-        item_data = extract_json(response)
+        response = call_llm(prompt, entity_model)
+        item_data = response.model_dump()
         print(json.dumps(item_data, indent=2))
     except Exception as e:
         print(f"Error: {e}")
