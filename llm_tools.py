@@ -1,6 +1,5 @@
 import ollama
 import json
-import os
 from dotenv import load_dotenv
 from config import use_local_llm, ollama_llm
 from typing import Any

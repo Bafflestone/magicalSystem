@@ -1,6 +1,4 @@
 import json
-import ollama
-import os
 from pydantic import BaseModel
 from typing import Literal, Optional, List
 from llm_tools import call_ollama, extract_json
