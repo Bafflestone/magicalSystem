@@ -1,10 +1,20 @@
 import ollama
 import json
 import os
-# Set Ollama host if running inside Docker
-os.environ["OLLAMA_HOST"] = "http://localhost:11434"
+from dotenv import load_dotenv
+from config import use_local_llm, ollama_llm
+from typing import Any
 
-def call_ollama(prompt: str, model, llm: str = "qwen2.5:7b") -> str:
+load_dotenv()
+
+def call_llm(prompt: str, output_format: Any) -> str:
+    """Call the local LLM API with a prompt."""
+    if use_local_llm:
+        return call_ollama(prompt, output_format)
+    else:
+        raise NotImplementedError("Remote LLM API not implemented.")
+
+def call_ollama(prompt: str, model: Any, llm: str = ollama_llm) -> str:
     """Call the local Ollama API with a prompt."""
     response = ollama.chat(
         model=llm,
