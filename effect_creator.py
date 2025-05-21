@@ -1,27 +1,35 @@
+import json
+from pydantic import BaseModel
+from typing import Literal, Optional, List
+from llm_tools import call_llm
+
+MAGIC_PROMPT_TEMPLATE = """
+You are the governing force of magic in a fantasy universe. Given a description of a set of circumstances that a group of mortals in your universe have constructed, determine what type of magical effect will occur.
+If there is no effect respond with: there is no magical effect.
+Description:
+"{description}"
 
 
-def systematise_magic(description, system="D&D 5e"):
+"""
 
-    prompt = TYPE_PROMPT_TEMPLATE.format(description=description, system=system)
-    print("Sending to Ollama...")
+
+
+def create_effect(description, system="D&D 5e"):
+
+    prompt = MAGIC_PROMPT_TEMPLATE.format(description=description)
+    print("Sending to LLM...")
 
     try:
-        response = call_ollama(prompt, DnDType)
-        type_dict = extract_json(response)
-        print(type_dict)
-        entity_type = type_dict['type']
+        response = call_llm(prompt)
+        print(response)
+        print(f"Effect: {response}")
     except Exception as e:
         print(f"Error: {e}")
 
 
-    prompt = OBJECT_TEMPLATE.format(description=description, system=system)
-    entity_model = DND_MAP[entity_type]
 
-    print("Sending to Ollama...")
+def main():
+    create_effect("A group of five adventurers gather by a fire holding elemental gems of type fire, water, ice, earth and air chanting 'rage' over and over again.")
 
-    try:
-        response = call_ollama(prompt, entity_model)
-        item_data = extract_json(response)
-        print(json.dumps(item_data, indent=2))
-    except Exception as e:
-        print(f"Error: {e}")
+if __name__ == "__main__":
+    main()
