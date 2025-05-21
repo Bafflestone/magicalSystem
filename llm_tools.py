@@ -1,26 +1,43 @@
 import ollama
 import json
-import os
-# Set Ollama host if running inside Docker
-os.environ["OLLAMA_HOST"] = "http://localhost:11434"
+from dotenv import load_dotenv
+from config import use_local_llm, ollama_llm, openai_llm
+from typing import Any
+from openai import OpenAI
 
-def call_ollama(prompt: str, model, llm: str = "qwen2.5:7b") -> str:
+load_dotenv()
+client = OpenAI()
+
+def call_llm(prompt: str, output_format: Any) -> str:
+    """Call the LLM API with a prompt."""
+    if use_local_llm:
+        return call_ollama(prompt, output_format)
+    else:
+        return call_openai(prompt, output_format)
+
+def call_ollama(prompt: str, output_format: Any, llm: str = ollama_llm) -> str:
     """Call the local Ollama API with a prompt."""
+
     response = ollama.chat(
         model=llm,
-        format=model.model_json_schema(),
+        format=output_format.model_json_schema(),
         messages=[
             {"role": "user", "content": prompt}
         ]
     )
-    return response['message']['content'].strip()
+    return output_format.model_validate_json(response.message.content)
 
+def call_openai(prompt: str, output_format: Any, llm: str = openai_llm) -> str:
+    """Call the OpenAI API with a prompt."""
 
-def extract_json(output: str) -> dict:
-    """Extract and clean JSON from model output."""
-    try:
-        return json.loads(output)
-    except json.JSONDecodeError:
-        start = output.find('{')
-        end = output.rfind('}') + 1
-        return json.loads(output[start:end])
+    response = client.responses.parse(
+        model=llm,
+        input=[
+            {
+                "role": "user",
+                "content": prompt,
+            },
+        ],
+        text_format=output_format,
+    )
+    return response.output_parsed
