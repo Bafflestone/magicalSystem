@@ -35,6 +35,7 @@ class DnDItem(BaseModel):
     damage: Optional[str]
     range: Optional[int] #In feet
     saving_throw: Optional[int]
+    saving_throw_type: Optional[Literal['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma']]
     charges: Optional[int]
     rarity: str
     effect_description: Optional[str]

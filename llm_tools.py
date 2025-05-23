@@ -35,7 +35,6 @@ def call_ollama(prompt: str, output_format: Any, llm: str = ollama_llm) -> str:
                 {"role": "user", "content": prompt}
             ]
         )
-        print(response)
         return response.message.content
 
 
