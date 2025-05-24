@@ -1,5 +1,4 @@
 import ollama
-import json
 from dotenv import load_dotenv
 from config import use_local_llm, ollama_llm, openai_llm
 from typing import Any, Optional

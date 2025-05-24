@@ -1,75 +1,7 @@
 import json
-from pydantic import BaseModel
-from typing import Literal, Optional, List
 from llm_tools import call_llm
-
-TYPE_PROMPT_TEMPLATE = """
-You are a dungeons and dragons dungeon master. Given a description of an entity or magical force in a fasntasy universe, please determine its type.
-
-Description:
-"{description}"
-
-Target System: {system}
-
-"""
-
-OBJECT_TEMPLATE = """
-You are a fantasy RPG item generator. Given a description and a target game system, output a structured item stat block appropriate to that system.
-
-Description:
-"{description}"
-
-Target System: {system}
-
-"""
-
-class DnDType(BaseModel):
-    type: Literal['Magic Item', 'Spell', 'Regular Item', 'Creature', 'Other']
-
-class DnDAny(BaseModel):
-    name: str
-    description: str
-
-class DnDItem(BaseModel):
-    name: str
-    damage: Optional[str]
-    range: Optional[int] #In feet
-    saving_throw: Optional[int]
-    saving_throw_type: Optional[Literal['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma']]
-    charges: Optional[int]
-    rarity: str
-    effect_description: Optional[str]
-    flavour_text: str
-
-class DnDSpell(BaseModel):
-    name: str
-    damage: Optional[str]
-    range: Optional[int] #In feet
-    saving_throw_dc: Optional[int]
-    saving_throw_type: Optional[Literal['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma']]
-    components: List[Literal['Verbal', 'Somatic', 'Material']]
-    materials: Optional[List[str]]
-    magic_school: Literal['Evocation', 'Necromancy', 'Abjuration', 'Enchantment', 'Divination']
-    spell_level: int
-    effect_description: str
-    flavour_text: str
-
-class DnDEffect(BaseModel):
-    name: Optional[str]
-    damage: Optional[str]
-    range: Optional[int] #In feet
-    saving_throw_dc: Optional[int]
-    saving_throw_type: Optional[Literal['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma']]
-    effect_description: str
-    flavour_text: str
-
-DND_MAP = {
-    "Magic Item": DnDItem,
-    "Spell": DnDSpell,
-    "Regular Item": DnDItem,
-    "Creature": DnDAny,
-    "Other": DnDAny
-}
+from llm_prompts import TYPE_PROMPT_TEMPLATE, OBJECT_TEMPLATE
+from dnd_classes import DnDType, DND_MAP
 
 def systematise_magic(description, system="D&D 5e"):
 
