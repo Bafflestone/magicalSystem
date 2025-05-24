@@ -93,6 +93,7 @@ class dnd_converter:
         messages = [
             SystemMessage(content=self.REFLECTION_PROMPT.format(
                 description=state["description"],
+                system=state["dnd_system"],
                 item_stat_block=state["draft"],
             )),
         ]

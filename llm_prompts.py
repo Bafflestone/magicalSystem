@@ -20,11 +20,14 @@ Target System: {system}
 """
 
 REFLECTION_PROMPT = """
-You are a critic of a fantasy RPG item generator. The generatator has produced an item stat block based on a description. Critique the item stat block and provide feedback on how it could be improved.
+You are a critic of a fantasy RPG item generator. The generatator has produced an item stat block based on a description and a target game system. Critique the item stat block and provide feedback on how it could be improved.
 Give preference to shorter, more concise stat blocks, and avoid excessive detail. If the item stat block is already good, say so.
 
 Description:
 "{description}"
+
+Target System: {system}
+
 Item Stat Block:
 "{item_stat_block}"
 
