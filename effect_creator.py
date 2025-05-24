@@ -9,8 +9,10 @@ def create_effect(description: str):
     try:
         response = call_llm(prompt)
         print(f"Effect: {response}")
+        return response
     except Exception as e:
         print(f"Error: {e}")
+        return "There is no effect."
 
 
 
