@@ -3,19 +3,16 @@ from dotenv import load_dotenv
 _ = load_dotenv()
 
 import operator
-import os
-from typing import Annotated, List, TypedDict
+from typing import Annotated, TypedDict
 
 from langchain_core.messages import (
-    HumanMessage,
     SystemMessage,
 )
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
-from llm_prompts import TYPE_PROMPT_TEMPLATE, OBJECT_TEMPLATE, REFLECTION_PROMPT
+from llm_prompts import TYPE_PROMPT_TEMPLATE, OBJECT_TEMPLATE, REFLECTION_PROMPT, REFLECT_OBJECT_TEMPLATE
 from dnd_classes import DnDType, DND_MAP
-from pydantic import BaseModel
 from config import openai_llm
 
 class AgentState(TypedDict):
@@ -40,20 +37,25 @@ class dnd_converter:
         self.TYPE_PROMPT_TEMPLATE = TYPE_PROMPT_TEMPLATE
         self.OBJECT_TEMPLATE = OBJECT_TEMPLATE
         self.REFLECTION_PROMPT = REFLECTION_PROMPT
+        self.REFLECT_OBJECT_TEMPLATE = REFLECT_OBJECT_TEMPLATE
 
         # Create the graph
         # Nodes
         builder = StateGraph(AgentState)
         builder.add_node("type_identifier", self.type_identifier_node)
-        builder.add_node("generate", self.generation_node)
+        builder.add_node("initial_generate", self.initial_generation_node)
         builder.add_node("reflect", self.reflection_node)
+        builder.add_node("reflection_generate", self.reflection_generation_node)
         builder.set_entry_point("type_identifier")
         # Edges
         builder.add_conditional_edges(
-            "generate", self.should_continue, {END: END, "reflect": "reflect"}
+            "initial_generate", self.should_continue, {END: END, "reflect": "reflect"}
         )
-        builder.add_edge("type_identifier", "generate")
-        builder.add_edge("reflect", "generate")
+        builder.add_conditional_edges(
+            "reflection_generate", self.should_continue, {END: END, "reflect": "reflect"}
+        )
+        builder.add_edge("type_identifier", "initial_generate")
+        builder.add_edge("reflect", "reflection_generate")
 
         # Compile graph with memory and interrupt states
         checkpointer = MemorySaver()
@@ -74,7 +76,7 @@ class dnd_converter:
             "count": 1,
         }
 
-    def generation_node(self, state: AgentState):
+    def initial_generation_node(self, state: AgentState):
         dnd_class = DND_MAP[state["dnd_type"]]
         messages = [
             SystemMessage(content=self.OBJECT_TEMPLATE.format(
@@ -85,7 +87,7 @@ class dnd_converter:
         return {
             "draft": response,
             "revision_number": state.get("revision_number", 1) + 1,
-            "lnode": "generate",
+            "lnode": "initial_generate",
             "count": 1,
         }
 
@@ -104,6 +106,21 @@ class dnd_converter:
             "count": 1,
         }
 
+    def reflection_generation_node(self, state: AgentState):
+        dnd_class = DND_MAP[state["dnd_type"]]
+        messages = [
+            SystemMessage(content=self.REFLECT_OBJECT_TEMPLATE.format(
+            description=state["description"], system=state["dnd_system"], item_stat_block=state["draft"], critique=state["critique"]
+        )),
+        ]
+        response = self.model.with_structured_output(dnd_class).invoke(messages)
+        return {
+            "draft": response,
+            "revision_number": state.get("revision_number", 1) + 1,
+            "lnode": "reflection_generate",
+            "count": 1,
+        }
+
     # Conditional edge definition
     def should_continue(self, state):
         if state["revision_number"] > state["max_revisions"]:
@@ -113,7 +130,7 @@ class dnd_converter:
 def main():
     """Function to process a single description using the agent"""
     description = "A metal scimitar that is engulfed by flame."
-    max_revisions = 1
+    max_revisions = 2
     thread = {"configurable": {"thread_id": "1"}}
 
     # To get all the intermediate results
