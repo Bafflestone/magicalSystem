@@ -52,6 +52,7 @@ Item Stat Block Critique:
 
 MAGIC_PROMPT_TEMPLATE = """
 You are the governing force of magic in a fantasy universe. Given a description of a set of circumstances that a group of mortals in your universe have constructed, determine what type of magical effect will occur.
+Only describe one effect that occurs, not speculating about different possible outcomes.
 If there is no effect respond with: there is no magical effect.
 Description:
 "{description}"
