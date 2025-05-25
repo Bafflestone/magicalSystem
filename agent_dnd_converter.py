@@ -1,19 +1,19 @@
-from dotenv import load_dotenv
-
-_ = load_dotenv()
-
 import operator
+from dotenv import load_dotenv
 from typing import Annotated, TypedDict
 
 from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from llm_prompts import TYPE_PROMPT_TEMPLATE, OBJECT_TEMPLATE, REFLECTION_PROMPT, REFLECT_OBJECT_TEMPLATE
 from dnd_classes import DnDType, DND_MAP
-from config import openai_llm
+from config import openai_llm, ollama_llm, use_local_llm
+
+load_dotenv()
 
 class AgentState(TypedDict):
     description: str
@@ -31,7 +31,10 @@ class dnd_converter:
     def __init__(self):
 
         # Initialize the model
-        self.model = ChatOpenAI(model=openai_llm, temperature=0)
+        if use_local_llm:
+            self.model = ChatOllama(model=ollama_llm, temperature=0)
+        else:
+            self.model = ChatOpenAI(model=openai_llm, temperature=0)
 
         # Define the prompts
         self.TYPE_PROMPT_TEMPLATE = TYPE_PROMPT_TEMPLATE
@@ -133,7 +136,7 @@ def main():
     max_revisions = 2
     thread = {"configurable": {"thread_id": "1"}}
 
-    # To get all the intermediate results
+    # # To get all the intermediate results
     # for s in dnd_converter().graph.stream(
     #     {
     #         "description": description,
