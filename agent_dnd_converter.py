@@ -11,7 +11,8 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from llm_prompts import TYPE_PROMPT_TEMPLATE, OBJECT_TEMPLATE, REFLECTION_PROMPT, REFLECT_OBJECT_TEMPLATE
 from dnd_classes import DnDType, DND_MAP
-from config import openai_llm, ollama_llm, use_local_llm, dnd_converter_outputs_path
+from config import openai_llm, ollama_llm, use_local_llm, dnd_converter_outputs_name
+from pathlib import Path
 import pandas as pd
 
 load_dotenv()
@@ -133,7 +134,7 @@ class dnd_converter:
 
 def append_to_output_file(data):
     """Append a row of data to the output CSV file"""
-    output_file = dnd_converter_outputs_path
+    output_file = Path(f"{dnd_converter_outputs_name}_{data['dnd_type'].replace(' ', '_').lower()}.csv")
     df = pd.DataFrame([data])
     if not output_file.exists():
         df.to_csv(output_file, mode='a', index=False)
