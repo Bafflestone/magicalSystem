@@ -14,3 +14,11 @@ dependencies = [
     "pandas>=2.3.0",
     "pydantic>=2.11.4",
 ]
+
+[dependency-groups]
+dev = [
+    "graphviz>=0.20.3",
+    "ipykernel>=6.29.5",
+    "ipython>=9.3.0",
+    "pygraphviz>=1.14",
+]
