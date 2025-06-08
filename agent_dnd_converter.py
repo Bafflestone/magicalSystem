@@ -11,7 +11,8 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 from llm_prompts import TYPE_PROMPT_TEMPLATE, OBJECT_TEMPLATE, REFLECTION_PROMPT, REFLECT_OBJECT_TEMPLATE
 from dnd_classes import DnDType, DND_MAP
-from config import openai_llm, ollama_llm, use_local_llm
+from config import openai_llm, ollama_llm, use_local_llm, dnd_converter_outputs_path
+import pandas as pd
 
 load_dotenv()
 
@@ -130,10 +131,30 @@ class dnd_converter:
             return END
         return "reflect"
 
+def append_to_output_file(data):
+    """Append a row of data to the output CSV file"""
+    output_file = dnd_converter_outputs_path
+    df = pd.DataFrame([data])
+    if not output_file.exists():
+        df.to_csv(output_file, mode='a', index=False)
+    else:
+        df.to_csv(output_file, mode='a', header=False, index=False)
+
+def save_result_to_file(result):
+    """Save the result to the output file"""
+    data = {
+        "description": result["description"],
+        "dnd_type": result["dnd_type"],
+        "dnd_system": result["dnd_system"],
+    }
+    data.update(result["draft"].model_dump())
+    # Append the result to the output file
+    append_to_output_file(data)
+
 def main():
     """Function to process a single description using the agent"""
     description = "A metal scimitar that is engulfed by flame."
-    max_revisions = 2
+    max_revisions = 1
     thread = {"configurable": {"thread_id": "1"}}
 
     # # To get all the intermediate results
@@ -158,8 +179,12 @@ def main():
         },
         thread,
     )
-    print(result["draft"].model_dump())
 
+    # Save the final result to the output file
+    save_result_to_file(result)
+
+    # Return the final result
+    print(result["draft"].model_dump())
     return result["draft"].model_dump()
 
 if __name__ == "__main__":

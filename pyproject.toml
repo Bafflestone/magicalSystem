@@ -11,5 +11,6 @@ dependencies = [
     "langgraph>=0.4.5",
     "ollama>=0.4.8",
     "openai>=1.79.0",
+    "pandas>=2.3.0",
     "pydantic>=2.11.4",
 ]
