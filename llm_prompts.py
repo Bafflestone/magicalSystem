@@ -19,6 +19,13 @@ Target System: {system}
 
 """
 
+SIMILAR_ITEMS_TEMPLATE = """
+Here are some items that could be similar, use them as a guide in creating this item. 
+Similar items:
+"{similar_items}"
+
+"""
+
 REFLECTION_PROMPT = """
 You are a critic of a fantasy RPG item generator. The generatator has produced an item stat block based on a description and a target game system. Critique the item stat block and provide feedback on how it could be improved.
 Give preference to more concise stat blocks with more interesting effects, and avoid excessive detail. If the item stat block is already good, say so.

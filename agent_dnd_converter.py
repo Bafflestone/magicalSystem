@@ -9,11 +9,12 @@ from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
-from llm_prompts import TYPE_PROMPT_TEMPLATE, OBJECT_TEMPLATE, REFLECTION_PROMPT, REFLECT_OBJECT_TEMPLATE
+from llm_prompts import TYPE_PROMPT_TEMPLATE, OBJECT_TEMPLATE, SIMILAR_ITEMS_TEMPLATE, REFLECTION_PROMPT, REFLECT_OBJECT_TEMPLATE
 from dnd_classes import DnDType, DND_MAP
 from config import openai_llm, ollama_llm, use_local_llm, dnd_converter_outputs_name
 from pathlib import Path
 import pandas as pd
+from rag_tools import retrieve_similar_items
 
 load_dotenv()
 
@@ -22,6 +23,7 @@ class AgentState(TypedDict):
     lnode: str
     dnd_type: str
     dnd_system: str
+    similar_items: dict[str] 
     draft: str
     critique: str
     revision_number: int
@@ -41,6 +43,7 @@ class dnd_converter:
         # Define the prompts
         self.TYPE_PROMPT_TEMPLATE = TYPE_PROMPT_TEMPLATE
         self.OBJECT_TEMPLATE = OBJECT_TEMPLATE
+        self.SIMILAR_ITEMS_TEMPLATE = SIMILAR_ITEMS_TEMPLATE
         self.REFLECTION_PROMPT = REFLECTION_PROMPT
         self.REFLECT_OBJECT_TEMPLATE = REFLECT_OBJECT_TEMPLATE
 
@@ -48,6 +51,7 @@ class dnd_converter:
         # Nodes
         builder = StateGraph(AgentState)
         builder.add_node("type_identifier", self.type_identifier_node)
+        builder.add_node("find_similar_items", self.find_similar_items)
         builder.add_node("initial_generate", self.initial_generation_node)
         builder.add_node("reflect", self.reflection_node)
         builder.add_node("reflection_generate", self.reflection_generation_node)
@@ -59,7 +63,8 @@ class dnd_converter:
         builder.add_conditional_edges(
             "reflection_generate", self.should_continue, {END: END, "reflect": "reflect"}
         )
-        builder.add_edge("type_identifier", "initial_generate")
+        builder.add_edge("type_identifier", "find_similar_items")
+        builder.add_edge("find_similar_items", "initial_generate")
         builder.add_edge("reflect", "reflection_generate")
 
         # Compile graph with memory and interrupt states
@@ -81,11 +86,23 @@ class dnd_converter:
             "count": 1,
         }
 
+    def find_similar_items(self, state: AgentState):
+        query = f"Find a magic item similar to this description: {state["description"]}"
+        similar_items = retrieve_similar_items(query = query, dnd_type=state["dnd_type"])
+        return {
+            "similar_items": similar_items,
+            "lnode": "find_similar_items",
+            "count": 1,
+        }
+    
     def initial_generation_node(self, state: AgentState):
         dnd_class = DND_MAP[state["dnd_type"]]
         messages = [
             SystemMessage(content=self.OBJECT_TEMPLATE.format(
             description=state["description"], system=state["dnd_system"]
+        )),
+            SystemMessage(content=self.SIMILAR_ITEMS_TEMPLATE.format(
+            similar_items=state["similar_items"]
         )),
         ]
         response = self.model.with_structured_output(dnd_class).invoke(messages)
@@ -154,7 +171,7 @@ def save_result_to_file(result):
 
 def main():
     """Function to process a single description using the agent"""
-    description = "A metal scimitar that is engulfed by flame."
+    description = "A wand which ends with a skeletal hand."
     max_revisions = 1
     thread = {"configurable": {"thread_id": "1"}}
 
