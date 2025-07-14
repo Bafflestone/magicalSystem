@@ -88,17 +88,17 @@ def create_retriever(dnd_type: str = 'Magic Item', number_to_retrieve: int = 2):
 
     return retriever_tool
 
-def parse_dnd_items(text: str, item_class) -> List:
+def parse_dnd_objects(text: str, item_class: type) -> List:
     """
-    Parse a text containing multiple D&D magic items separated by --document-separator--
-    and convert them to a list of DnDItem objects.
+    Parse a text containing multiple D&D objects separated by --document-separator--
+    and convert them to a list of the specified Pydantic model objects.
     
     Args:
-        text (str): The raw text containing item descriptions
+        text (str): The raw text containing object descriptions
         item_class (type): The Pydantic model class to create instances of
         
     Returns:
-        List: A list of parsed objects
+        List: A list of parsed objects of the specified type
     """
     
     # Get field information from the Pydantic model
@@ -142,6 +142,7 @@ def parse_dnd_items(text: str, item_class) -> List:
                     if len(args) == 2 and type(None) in args:
                         # This is Optional[T], get the non-None type
                         field_type = args[0] if args[1] is type(None) else args[1]
+                        origin = get_origin(field_type)
                 
                 # Convert value based on field type
                 if not value:  # Empty string
@@ -153,9 +154,30 @@ def parse_dnd_items(text: str, item_class) -> List:
                 elif field_type == str:
                     item_data[key] = value
                 elif get_origin(field_type) is Literal:
-                    # Handle Literal types (like saving_throw_type)
+                    # Handle Literal types (like saving_throw_type, magic_school)
                     valid_values = get_args(field_type)
                     item_data[key] = value if value in valid_values else None
+                elif origin is list:  # Handle List types
+                    # Get the inner type of the List
+                    list_args = get_args(field_type)
+                    if list_args:
+                        inner_type = list_args[0]
+                        
+                        # Split the value by comma or other delimiter
+                        list_values = [v.strip() for v in value.split(',') if v.strip()]
+                        
+                        # Handle List[Literal[...]] types
+                        if get_origin(inner_type) is Literal:
+                            valid_values = get_args(inner_type)
+                            item_data[key] = [v for v in list_values if v in valid_values]
+                        elif inner_type == str:
+                            item_data[key] = list_values
+                        else:
+                            # Default case for other list types
+                            item_data[key] = list_values
+                    else:
+                        # Fallback if no type args found
+                        item_data[key] = [v.strip() for v in value.split(',') if v.strip()]
                 else:
                     # Default case - try to use the value as is
                     item_data[key] = value
@@ -177,7 +199,7 @@ def retrieve_similar_items(query: str = "Find a magic item with fire damage", dn
         return None
     
     result = retriever_tool.invoke({"query": query})
-    parsed_result = parse_dnd_items(result, DND_MAP[dnd_type])
+    parsed_result = parse_dnd_objects(result, DND_MAP[dnd_type])
     return parsed_result
 
 if __name__ == "__main__":
