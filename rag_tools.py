@@ -11,10 +11,25 @@ import re
 
 load_dotenv()
 
-def ingest_documents(dnd_type: str = "magic_item"):
+def ingest_documents(dnd_type: str = "magic_item") -> list | None:
+    """
+    Ingests documents from a CSV file for a specified D&D type.
+    
+    Args:
+        dnd_type (str): The type of D&D content to ingest. Defaults to "magic_item".
+    
+    Returns:
+        list | None: A list of loaded documents if successful, None if the file doesn't exist,
+                     is empty, or contains no valid documents.
+    """
     print(f"Ingesting documents for DnD type: {dnd_type}...")
     # Load the CSV file
     csv_file_path = Path(f"{dnd_converter_outputs_name}_{dnd_type}.csv")
+    
+    # Check if file exists and is not empty
+    if not csv_file_path.exists() or csv_file_path.stat().st_size == 0:
+        return None
+    
     loader = CSVLoader(file_path=csv_file_path, encoding="utf-8")
     
     # Load documents from the CSV file
@@ -39,15 +54,30 @@ def create_retriever(dnd_type: str = 'Magic Item', number_to_retrieve: int = 2):
     Retriever for single dnd type. 
     Note that it will always retrieve number_to_retrieve documents, as long as they are available.
     Documents are separated by "\n--document-separator--\n" 
-    """
     
+    Args:
+        dnd_type (str): The type of D&D content to create retriever for. Defaults to 'Magic Item'.
+        number_to_retrieve (int): Number of documents to retrieve. Defaults to 2.
+    
+    Returns:
+        retriever_tool | None: A retriever tool if documents are available, None if no documents found.
+    """
+
     print(f"Creating retriever for DnD type: {dnd_type}...")
     # Process dnd type
     dnd_type_formatted = dnd_type.lower().replace(" ", "_")
+    
     # Ingest documents from the CSV file
     documents = ingest_documents(dnd_type=dnd_type_formatted)
+    
+    # Handle the case where no documents are available
+    if documents is None:
+        print(f"No documents available for DnD type: {dnd_type}. Cannot create retriever.")
+        return None
+    
     # Create a vector store from the documents
     vector_store = create_vector_store(documents)
+    
     # Create a retriever tool from the vector store
     retriever_tool = create_retriever_tool(
         vector_store.as_retriever(search_kwargs={"k": number_to_retrieve}),
@@ -142,10 +172,14 @@ def parse_dnd_items(text: str, item_class) -> List:
 
 def retrieve_similar_items(query: str = "Find a magic item with fire damage", dnd_type: str = "Magic Item") -> List:
     retriever_tool = create_retriever(dnd_type=dnd_type)
+    if retriever_tool is None:
+        print(f"No documents available for DnD type: {dnd_type}. Cannot retrieve similar items.")
+        return None
+    
     result = retriever_tool.invoke({"query": query})
     parsed_result = parse_dnd_items(result, DND_MAP[dnd_type])
     return parsed_result
 
 if __name__ == "__main__":
-    parsed_result = retrieve_similar_items()
+    parsed_result = retrieve_similar_items(dnd_type="Spell")
     print(parsed_result)

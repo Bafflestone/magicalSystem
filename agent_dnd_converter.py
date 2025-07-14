@@ -100,11 +100,12 @@ class dnd_converter:
         messages = [
             SystemMessage(content=self.OBJECT_TEMPLATE.format(
             description=state["description"], system=state["dnd_system"]
-        )),
-            SystemMessage(content=self.SIMILAR_ITEMS_TEMPLATE.format(
-            similar_items=state["similar_items"]
-        )),
+        ))
         ]
+        if state["similar_items"] is not None:
+            messages.append(SystemMessage(content=self.SIMILAR_ITEMS_TEMPLATE.format(
+            similar_items=state["similar_items"]
+        )))
         response = self.model.with_structured_output(dnd_class).invoke(messages)
         return {
             "draft": response,
@@ -171,7 +172,7 @@ def save_result_to_file(result):
 
 def main():
     """Function to process a single description using the agent"""
-    description = "A wand which ends with a skeletal hand."
+    description = "A ritual made by arranging red dragon bones in a circle."
     max_revisions = 1
     thread = {"configurable": {"thread_id": "1"}}
 
