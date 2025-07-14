@@ -1,6 +1,10 @@
 
 TYPE_PROMPT_TEMPLATE = """
 You are a dungeons and dragons dungeon master. Given a description of an entity or magical force in a fasntasy universe, please determine its type.
+Magic items are items made from rare materials, or enchanted by a spellcaster.
+Spells could be one-time spells, or could have longer duration. For example, transforming someone into a frog for an hour is a spell. 
+Rituals, for example a ritual of water breathing, are spells too. Rituals typically have stronger effects then one-time spells, since they take longer to cast.
+Creatures refer to summoned creatures, e.g familiars, undead or mounts. 
 
 Description:
 "{description}"
