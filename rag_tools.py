@@ -192,7 +192,7 @@ def parse_dnd_objects(text: str, item_class: type) -> List:
     
     return items
 
-def retrieve_similar_items(query: str = "Find a magic item with fire damage", dnd_type: str = "Magic Item") -> List:
+def retrieve_similar_objects(query: str = "Find a magic item with fire damage", dnd_type: str = "Magic Item") -> List:
     retriever_tool = create_retriever(dnd_type=dnd_type)
     if retriever_tool is None:
         print(f"No documents available for DnD type: {dnd_type}. Cannot retrieve similar items.")
@@ -203,5 +203,5 @@ def retrieve_similar_items(query: str = "Find a magic item with fire damage", dn
     return parsed_result
 
 if __name__ == "__main__":
-    parsed_result = retrieve_similar_items(dnd_type="Spell")
+    parsed_result = retrieve_similar_objects(dnd_type="Spell")
     print(parsed_result)

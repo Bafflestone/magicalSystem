@@ -16,7 +16,7 @@ def systematise_magic(description, system="D&D 5e"):
         print(f"Error: {e}")
 
 
-    prompt = OBJECT_TEMPLATE.format(description=description, system=system)
+    prompt = OBJECT_TEMPLATE.format(dnd_type=entity_type, description=description, system=system)
     entity_model = DND_MAP[entity_type]
 
     print("Sending to LLM...")
